@@ -17,14 +17,8 @@ class TodoListViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        
-        print (dataFilePath)
-        
         // Do any additional setup after loading the view.
-        itemArray.append(Item(newTitle: "Find Mike"))
-        itemArray.append(Item(newTitle: "Buy Eggos"))
-        itemArray.append(Item(newTitle: "Destroy Demogorgon"))
-
+        loadItems()
     }
     
     //MARK - Tableview Datasource Methods
@@ -37,8 +31,8 @@ class TodoListViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
         let item = itemArray[indexPath.row]
         
-        cell.textLabel?.text = String(indexPath.row + 1) + ". " + item.title
-         cell.accessoryType = item.done ? .checkmark : .none
+        cell.textLabel?.text = "\(indexPath.row + 1). " + item.title
+        cell.accessoryType = item.done ? .checkmark : .none
         
         return cell
     }
@@ -50,6 +44,9 @@ class TodoListViewController: UITableViewController {
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         tableView.reloadData()
         tableView.deselectRow(at: indexPath, animated: true)
+        saveItems()
+        
+
     }
     
     //MARK - Add New Items
@@ -64,16 +61,7 @@ class TodoListViewController: UITableViewController {
             self.itemArray.append(Item(newTitle: textFieldEntered.text!))
             
             // update shared pref to store changed itemArray
-
-            let encoder = PropertyListEncoder()
-            do {
-                let data = try encoder.encode(self.itemArray)
-                try data.write(to: self.dataFilePath!)
-            }
-            catch {
-                print("Error encoding item array, \(error)")
-            }
-            self.tableView.reloadData()
+            self.saveItems()
         }
         
         alert.addTextField { (alertTextField) in
@@ -84,6 +72,31 @@ class TodoListViewController: UITableViewController {
         alert.addAction(action)
         
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveItems() {
+        let encoder = PropertyListEncoder()
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        }
+        catch {
+            print("Error encoding item array, \(error)")
+        }
+        tableView.reloadData()
+    }
+    
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!){
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            }
+            catch {
+                print("Error decoding itemArray: \(error)")
+            }
+        }
+        
     }
     
 }
